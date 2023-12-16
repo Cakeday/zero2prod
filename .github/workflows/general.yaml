@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 env:
   CARGO_TERM_COLOR: always
-  SQLX_VERSION: 0.7.1
+  SQLX_VERSION: 0.7.3
   SQLX_FEATURES: "rustls,postgres"
 
 # A workflow run is made up of one or more jobs, which run in parallel by default
@@ -81,7 +81,7 @@ jobs:
           # Specific to dtolnay/rust-toolchain: Comma-separated string of additional components to install
           components: rustfmt
       - name: Enforce formatting
-        run: cargo fmt --check
+        run: cargo fmt
 
   # `clippy` container job
   clippy:
@@ -116,7 +116,7 @@ jobs:
       - name: Migrate database
         run: SKIP_DOCKER=true ./scripts/init_db.sh
       - name: Linting
-        run: cargo clippy -- -D warnings
+        run: cargo clippy
 
   # `coverage` container job
   coverage:

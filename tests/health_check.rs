@@ -3,9 +3,26 @@
 
 // To inspect, run `cargo expand --test health_check`
 use sqlx::{Connection, Executor, PgConnection, PgPool};
-use std::net::TcpListener;
+use tracing::subscriber;
+use std::{net::TcpListener, io::stdout};
 use uuid::Uuid;
-use zero2prod::configuration::{get_configuration, DatabaseSettings};
+use zero2prod::{
+    configuration::{get_configuration, DatabaseSettings},
+    telemetry::{get_subscriber, init_subscriber},
+};
+use once_cell::sync::Lazy;
+
+static TRACING: Lazy<()> = Lazy::new(|| {
+    let default_filter_level = "test".into();
+    let subscriber_name = "debug".into();
+    if std::env::var("TEST_LOG").is_ok() {
+        let subscriber = get_subscriber(default_filter_level, subscriber_name, std::io::stdout);
+        init_subscriber(subscriber);
+    } else {
+        let subscriber = get_subscriber(default_filter_level, subscriber_name, std::io::sink);
+        init_subscriber(subscriber);
+    }
+});
 
 pub struct TestApp {
     pub address: String,
@@ -13,6 +30,8 @@ pub struct TestApp {
 }
 
 async fn spawn_app() -> TestApp {
+    Lazy::force(&TRACING);
+
     let listener = TcpListener::bind("localhost:0").expect("Failed to bind to random port.");
     let port = listener.local_addr().unwrap().port();
     let address = format!("http://localhost:{port}");

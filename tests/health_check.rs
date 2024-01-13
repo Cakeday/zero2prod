@@ -1,6 +1,7 @@
 // `tokio::test` is the equivalent of `tokio::main`
 // It also spares you from having to specify the `#[test]` attr
 
+use secrecy::ExposeSecret;
 // To inspect, run `cargo expand --test health_check`
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use tracing::subscriber;
@@ -52,7 +53,7 @@ async fn spawn_app() -> TestApp {
 
 pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
     // Create database by connecting to the instance -- dont need a pool for this
-    let mut connection = PgConnection::connect(&config.connection_string_without_db())
+    let mut connection = PgConnection::connect(&config.connection_string_without_db().expose_secret())
         .await
         .expect("Failed to connect to Postgres");
 
@@ -61,7 +62,7 @@ pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
         .await
         .expect("Failed to create database");
 
-    let connection_pool = PgPool::connect(&config.connection_string())
+    let connection_pool = PgPool::connect(&config.connection_string().expose_secret())
         .await
         .expect("Failed to connect to Postgres");
 
